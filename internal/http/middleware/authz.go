@@ -14,7 +14,7 @@ func AuthZRoles(allowed ...string) func(http.Handler) http.Handler {
 			claims, _ := r.Context().Value(CtxClaimsKey).(map[string]any)
 			role, _ := claims["role"].(string)
 			if _, ok := set[role]; !ok {
-				http.Error(w, "forbidden", http.StatusForbidden)
+				WriteErrorJSON(w, http.StatusForbidden, "forbidden", "insufficient role")
 				return
 			}
 			next.ServeHTTP(w, r)

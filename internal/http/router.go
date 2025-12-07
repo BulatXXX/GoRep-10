@@ -15,13 +15,17 @@ import (
 func Build(cfg config.Config) http.Handler {
 	r := chi.NewRouter()
 
+	r.Use(middleware.Logging())
+
 	// DI
 	userRepo := repo.NewUserMem() // храним заранее захэшированных юзеров (email, bcrypt)
 	jwtv := jwt.NewRS256(cfg.AccessTTL, cfg.RefreshTTL, cfg.ActiveKid)
 	svc := core.NewService(userRepo, jwtv)
 
 	// Публичные маршруты
-	r.Post("/api/v1/login", svc.LoginHandler) // выдаёт JWT по email+password
+	r.With(middleware.RateLimitLogin()).
+		Post("/api/v1/login", svc.LoginHandler)
+
 	r.Post("/api/v1/refresh", svc.RefreshHandler)
 
 	// Защищённые маршруты

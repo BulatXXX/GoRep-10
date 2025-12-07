@@ -18,7 +18,6 @@ type userRepo interface {
 	CheckPassword(email, pass string) (repo.UserRecord, error)
 }
 
-// jwtSigner должен совпадать с тем, что реально умеет HS256
 type jwtSigner interface {
 	SignAccess(userID int64, email, role string) (string, error)
 	SignRefresh(userID int64, email, role string) (string, error)
@@ -208,15 +207,29 @@ func (s *Service) AdminStats(w http.ResponseWriter, r *http.Request) {
 
 // === утилиты ===
 
+type errorResponse struct {
+	Error   string      `json:"error"`
+	Details interface{} `json:"details,omitempty"`
+}
+
 func jsonOK(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-func httpError(w http.ResponseWriter, code int, msg string) {
+func httpError(w http.ResponseWriter, code int, msg string, details ...interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(map[string]string{"error": msg})
+
+	var det interface{}
+	if len(details) > 0 {
+		det = details[0]
+	}
+
+	_ = json.NewEncoder(w).Encode(errorResponse{
+		Error:   msg,
+		Details: det,
+	})
 }
 
 // === in-memory blacklist для refresh-токенов ===
