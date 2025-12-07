@@ -8,9 +8,9 @@ import (
 
 type Config struct {
 	Port       string
-	JWTSecret  []byte
 	AccessTTL  time.Duration
 	RefreshTTL time.Duration
+	ActiveKid  string
 }
 
 func Load() Config {
@@ -19,33 +19,33 @@ func Load() Config {
 		port = "8080"
 	}
 
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		log.Fatal("JWT_SECRET is required")
+	accessTTLStr := os.Getenv("JWT_ACCESS_TTL")
+	if accessTTLStr == "" {
+		accessTTLStr = "15m"
 	}
-
-	accessTTL := os.Getenv("JWT_ACCESS_TTL")
-	if accessTTL == "" {
-		accessTTL = "15m" // по ТЗ
-	}
-	durAccess, err := time.ParseDuration(accessTTL)
+	accessTTL, err := time.ParseDuration(accessTTLStr)
 	if err != nil {
 		log.Fatal("bad JWT_ACCESS_TTL")
 	}
 
-	refreshTTL := os.Getenv("JWT_REFRESH_TTL")
-	if refreshTTL == "" {
-		refreshTTL = "168h" // 7 дней
+	refreshTTLStr := os.Getenv("JWT_REFRESH_TTL")
+	if refreshTTLStr == "" {
+		refreshTTLStr = "168h" // 7 дней
 	}
-	durRefresh, err := time.ParseDuration(refreshTTL)
+	refreshTTL, err := time.ParseDuration(refreshTTLStr)
 	if err != nil {
 		log.Fatal("bad JWT_REFRESH_TTL")
 	}
 
+	activeKid := os.Getenv("JWT_ACTIVE_KID")
+	if activeKid == "" {
+		activeKid = "k1" // по умолчанию
+	}
+
 	return Config{
 		Port:       ":" + port,
-		JWTSecret:  []byte(secret),
-		AccessTTL:  durAccess,
-		RefreshTTL: durRefresh,
+		AccessTTL:  accessTTL,
+		RefreshTTL: refreshTTL,
+		ActiveKid:  activeKid,
 	}
 }

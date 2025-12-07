@@ -17,7 +17,7 @@ func Build(cfg config.Config) http.Handler {
 
 	// DI
 	userRepo := repo.NewUserMem() // храним заранее захэшированных юзеров (email, bcrypt)
-	jwtv := jwt.NewHS256(cfg.JWTSecret, cfg.AccessTTL, cfg.RefreshTTL)
+	jwtv := jwt.NewRS256(cfg.AccessTTL, cfg.RefreshTTL, cfg.ActiveKid)
 	svc := core.NewService(userRepo, jwtv)
 
 	// Публичные маршруты
