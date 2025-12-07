@@ -17,11 +17,12 @@ func Build(cfg config.Config) http.Handler {
 
 	// DI
 	userRepo := repo.NewUserMem() // храним заранее захэшированных юзеров (email, bcrypt)
-	jwtv := jwt.NewHS256(cfg.JWTSecret, cfg.JWTTTL)
+	jwtv := jwt.NewHS256(cfg.JWTSecret, cfg.AccessTTL, cfg.RefreshTTL)
 	svc := core.NewService(userRepo, jwtv)
 
 	// Публичные маршруты
 	r.Post("/api/v1/login", svc.LoginHandler) // выдаёт JWT по email+password
+	r.Post("/api/v1/refresh", svc.RefreshHandler)
 
 	// Защищённые маршруты
 	r.Group(func(priv chi.Router) {
