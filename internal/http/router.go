@@ -29,6 +29,7 @@ func Build(cfg config.Config) http.Handler {
 		priv.Use(middleware.AuthN(jwtv))                 // аутентификация JWT
 		priv.Use(middleware.AuthZRoles("admin", "user")) // базовая RBAC
 		priv.Get("/api/v1/me", svc.MeHandler)            // вернёт профиль из токена
+		priv.Get("/api/v1/users/{id}", svc.UserHandler)
 	})
 
 	// Пример только для админов

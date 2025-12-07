@@ -3,9 +3,11 @@ package core
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	jwtlib "github.com/golang-jwt/jwt/v5"
 
 	"singularity.com/pz10-auth/internal/http/middleware"
@@ -145,6 +147,58 @@ func (s *Service) MeHandler(w http.ResponseWriter, r *http.Request) {
 		"id":    claims["sub"],
 		"email": claims["email"],
 		"role":  claims["role"],
+	})
+}
+
+// ABAC: /api/v1/users/{id}
+func (s *Service) UserHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		httpError(w, http.StatusBadRequest, "invalid_id")
+		return
+	}
+	claims, ok := r.Context().Value(middleware.CtxClaimsKey).(map[string]any)
+	if !ok || claims == nil {
+		httpError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	role, _ := claims["role"].(string)
+
+	var subID int64
+	switch v := claims["sub"].(type) {
+	case float64:
+		subID = int64(v)
+	case int64:
+		subID = v
+	default:
+		httpError(w, http.StatusInternalServerError, "bad_claims")
+		return
+	}
+
+	if role == "user" && subID != id {
+		httpError(w, http.StatusForbidden, "forbidden")
+		return
+	}
+
+	var userEmail, userRole string
+	switch id {
+	case 1:
+		userEmail = "admin@example.com"
+		userRole = "admin"
+	case 2:
+		userEmail = "user@example.com"
+		userRole = "user"
+	default:
+		httpError(w, http.StatusNotFound, "not_found")
+		return
+	}
+
+	jsonOK(w, map[string]any{
+		"id":    id,
+		"email": userEmail,
+		"role":  userRole,
 	})
 }
 
